@@ -13,9 +13,9 @@
 #include "esp_system.h"
 #include "esp_log.h"
 #include "esp_console.h"
-#include "esp_vfs_dev.h"
+#include "driver/uart_vfs.h"
 #include "driver/uart.h"
-#include "esp_vfs_usb_serial_jtag.h"
+#include "driver/usb_serial_jtag_vfs.h"
 #include "driver/usb_serial_jtag.h"
 #include "linenoise/linenoise.h"
 #include "argtable3/argtable3.h"
@@ -48,7 +48,7 @@
 #if defined(CONFIG_IDF_TARGET_ESP32S3)
 #define BLINK_GPIO 44
 #else
-#define BLINK_GPIO 2
+#define BLINK_GPIO 8
 #endif
 
 /* FreeRTOS event group to signal when we are connected*/
@@ -247,9 +247,9 @@ static void initialize_console(void)
     fsync(fileno(stdout));
     
     /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
-    esp_vfs_dev_uart_port_set_rx_line_endings(0, ESP_LINE_ENDINGS_CR);
+    uart_vfs_dev_port_set_rx_line_endings(0, ESP_LINE_ENDINGS_CR);
     /* Move the caret to the beginning of the next line on '\n' */
-    esp_vfs_dev_uart_port_set_tx_line_endings(0, ESP_LINE_ENDINGS_CRLF);
+    uart_vfs_dev_port_set_tx_line_endings(0, ESP_LINE_ENDINGS_CRLF);
 
     /* Configure UART. Note that REF_TICK is used so that the baud rate remains
      * correct while APB frequency is changing in light sleep mode.
@@ -271,7 +271,7 @@ static void initialize_console(void)
     ESP_ERROR_CHECK( uart_param_config(CONFIG_ESP_CONSOLE_UART_NUM, &uart_config) );
 
     /* Tell VFS to use UART driver */
-    esp_vfs_dev_uart_use_driver(CONFIG_ESP_CONSOLE_UART_NUM);
+    uart_vfs_dev_use_driver(CONFIG_ESP_CONSOLE_UART_NUM);
 #endif
 
 #if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
@@ -280,10 +280,10 @@ static void initialize_console(void)
     fcntl(fileno(stdin), F_SETFL, O_NONBLOCK);
 
     /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
-    esp_vfs_dev_usb_serial_jtag_set_rx_line_endings(ESP_LINE_ENDINGS_CR);
+    usb_serial_jtag_vfs_set_rx_line_endings(ESP_LINE_ENDINGS_CR);
 
     /* Move the caret to the beginning of the next line on '\n' */
-    esp_vfs_dev_usb_serial_jtag_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
+    usb_serial_jtag_vfs_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
     usb_serial_jtag_driver_config_t usb_serial_jtag_config = {
         .tx_buffer_size = 256,
         .rx_buffer_size = 256,
@@ -293,7 +293,7 @@ static void initialize_console(void)
     usb_serial_jtag_driver_install(&usb_serial_jtag_config);
 
     /* Tell vfs to use usb-serial-jtag driver */
-    esp_vfs_usb_serial_jtag_use_driver();
+    usb_serial_jtag_vfs_use_driver();
 #endif
 
     /* Initialize the console */
@@ -472,7 +472,7 @@ void wifi_init(const uint8_t* mac, const char* ssid, const char* ent_username, c
             ESP_LOGI(TAG, "STA regular connection");
             strlcpy((char*)wifi_config.sta.password, passwd, sizeof(wifi_config.sta.password));
         }
-        ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config) );
+        ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
         if(strlen(ent_username) != 0 && strlen(ent_identity) != 0) {
             ESP_LOGI(TAG, "STA enterprise connection");
             if(strlen(ent_username) != 0 && strlen(ent_identity) != 0) {
@@ -486,16 +486,16 @@ void wifi_init(const uint8_t* mac, const char* ssid, const char* ent_username, c
         }
 
         if (mac != NULL) {
-            ESP_ERROR_CHECK(esp_wifi_set_mac(ESP_IF_WIFI_STA, mac));
+            ESP_ERROR_CHECK(esp_wifi_set_mac(WIFI_IF_STA, mac));
         }
     } else {
         ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP) );
     }
 
-    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_AP, &ap_config) );
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &ap_config) );
 
     if (ap_mac != NULL) {
-        ESP_ERROR_CHECK(esp_wifi_set_mac(ESP_IF_WIFI_AP, ap_mac));
+        ESP_ERROR_CHECK(esp_wifi_set_mac(WIFI_IF_AP, ap_mac));
     }
 
 
@@ -508,7 +508,7 @@ void wifi_init(const uint8_t* mac, const char* ssid, const char* ent_username, c
     dnsserver.ip.type = ESP_IPADDR_TYPE_V4;
     esp_netif_set_dns_info(wifiAP, ESP_NETIF_DNS_MAIN, &dnsserver);
 
-    // esp_netif_get_dns_info(ESP_IF_WIFI_AP, ESP_NETIF_DNS_MAIN, &dnsinfo);
+    // esp_netif_get_dns_info(WIFI_IF_AP, ESP_NETIF_DNS_MAIN, &dnsinfo);
     // ESP_LOGI(TAG, "DNS IP:" IPSTR, IP2STR(&dnsinfo.ip.u_addr.ip4));
 
     xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT,
