@@ -117,11 +117,18 @@ setTimeout(\"location.href = '/'\",10000);\
 <td><input type='text' name='ent_identity' value='%s' placeholder='WPA2 Enterprise identity'/></td>\
 </tr>\
 <tr>\
+<td>MAC Address</td>\
+<td><input type='text' name='sta_mac' value='%s' placeholder='1C:DB:D4:FF:FF:FF'/></td>\
+</tr>\
+<tr>\
 <td></td>\
 <td><input type='submit' value='Connect' class='ok-button'/></td>\
 </tr>\
 \
 </table>\
+<small>\
+<i>MAC Address </i>format: 1C:DB:D4:FF:FF:FF (leave blank for default)<br />\
+</small>\
 </form>\
 \
 <h2>STA Static IP Settings</h2>\

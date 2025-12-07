@@ -524,6 +524,7 @@ void wifi_init(const uint8_t* mac, const char* ssid, const char* ent_username, c
 }
 
 uint8_t* mac = NULL;
+char* sta_mac_str = NULL;
 char* ssid = NULL;
 char* ent_username = NULL;
 char* ent_identity = NULL;
@@ -542,6 +543,33 @@ char* param_set_default(const char* def_val) {
     return retval;
 }
 
+char* mac_bytes_to_string(uint8_t* mac_bytes) {
+    if (mac_bytes == NULL) {
+        return param_set_default("");
+    }
+    char* mac_str = malloc(18); // AA:BB:CC:DD:EE:FF + null terminator
+    snprintf(mac_str, 18, "%02X:%02X:%02X:%02X:%02X:%02X",
+             mac_bytes[0], mac_bytes[1], mac_bytes[2],
+             mac_bytes[3], mac_bytes[4], mac_bytes[5]);
+    return mac_str;
+}
+
+int parse_mac_string(const char* mac_str, uint8_t* mac_bytes) {
+    if (strlen(mac_str) == 0) {
+        return 0; // Empty string means use default MAC
+    }
+    int values[6];
+    if (sscanf(mac_str, "%02x:%02x:%02x:%02x:%02x:%02x",
+               &values[0], &values[1], &values[2],
+               &values[3], &values[4], &values[5]) == 6) {
+        for (int i = 0; i < 6; i++) {
+            mac_bytes[i] = (uint8_t)values[i];
+        }
+        return 1; // Success
+    }
+    return -1; // Parse error
+}
+
 void app_main(void)
 {
     initialize_nvs();
@@ -554,6 +582,7 @@ void app_main(void)
 #endif
 
     get_config_param_blob("mac", &mac, 6);
+    sta_mac_str = mac_bytes_to_string(mac);
     get_config_param_str("ssid", &ssid);
     if (ssid == NULL) {
         ssid = param_set_default("");

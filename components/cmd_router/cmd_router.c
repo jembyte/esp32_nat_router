@@ -333,7 +333,17 @@ esp_err_t set_mac(const char *key, const char *interface, int argc, char **argv)
 }
 
 int set_sta_mac(int argc, char **argv) {
-    return set_mac("mac", "STA", argc, argv);
+    esp_err_t result = set_mac("mac", "STA", argc, argv);
+    if (result == ESP_OK) {
+        // Update sta_mac_str after successfully setting MAC
+        uint8_t mac[] = {set_mac_arg.mac0->ival[0], set_mac_arg.mac1->ival[0], set_mac_arg.mac2->ival[0],
+                         set_mac_arg.mac3->ival[0], set_mac_arg.mac4->ival[0], set_mac_arg.mac5->ival[0]};
+        if (sta_mac_str != NULL) {
+            free(sta_mac_str);
+        }
+        sta_mac_str = mac_bytes_to_string(mac);
+    }
+    return result;
 }
 
 int set_ap_mac(int argc, char **argv) {

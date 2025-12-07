@@ -72,6 +72,7 @@ static esp_err_t index_get_handler(httpd_req_t *req)
             char param2[64];
             char param3[64];
             char param4[64];
+            char param5[64];
             /* Get value of expected key from query string */
             if (httpd_query_key_value(buf, "ap_ssid", param1, sizeof(param1)) == ESP_OK) {
                 ESP_LOGI(TAG, "Found URL query parameter => ap_ssid=%s", param1);
@@ -119,6 +120,38 @@ static esp_err_t index_get_handler(httpd_req_t *req)
                             }
 
                     set_sta(argc, argv);
+
+                    // Handle MAC address if provided
+                    if (httpd_query_key_value(buf, "sta_mac", param5, sizeof(param5)) == ESP_OK) {
+                        ESP_LOGI(TAG, "Found URL query parameter => sta_mac=%s", param5);
+                        preprocess_string(param5);
+                        if (strlen(param5) > 0) {
+                            uint8_t mac_bytes[6];
+                            if (parse_mac_string(param5, mac_bytes) == 1) {
+                                int mac_argc = 7;
+                                char mac_arg0[4], mac_arg1[4], mac_arg2[4], mac_arg3[4], mac_arg4[4], mac_arg5[4];
+                                char* mac_argv[7];
+                                mac_argv[0] = "set_sta_mac";
+                                sprintf(mac_arg0, "%d", mac_bytes[0]);
+                                sprintf(mac_arg1, "%d", mac_bytes[1]);
+                                sprintf(mac_arg2, "%d", mac_bytes[2]);
+                                sprintf(mac_arg3, "%d", mac_bytes[3]);
+                                sprintf(mac_arg4, "%d", mac_bytes[4]);
+                                sprintf(mac_arg5, "%d", mac_bytes[5]);
+                                mac_argv[1] = mac_arg0;
+                                mac_argv[2] = mac_arg1;
+                                mac_argv[3] = mac_arg2;
+                                mac_argv[4] = mac_arg3;
+                                mac_argv[5] = mac_arg4;
+                                mac_argv[6] = mac_arg5;
+                                set_sta_mac(mac_argc, mac_argv);
+                                ESP_LOGI(TAG, "STA MAC address set to: %s", param5);
+                            } else {
+                                ESP_LOGW(TAG, "Invalid MAC address format: %s", param5);
+                            }
+                        }
+                    }
+
                     esp_timer_start_once(restart_timer, 500000);
                         }
                     }
@@ -214,6 +247,7 @@ httpd_handle_t start_webserver(void)
     char* safe_passwd = html_escape(passwd);
     char* safe_ent_username = html_escape(ent_username);
     char* safe_ent_identity = html_escape(ent_identity);
+    char* safe_sta_mac_str = html_escape(sta_mac_str);
 
     int page_len =
         strlen(config_page_template) +
@@ -223,13 +257,14 @@ httpd_handle_t start_webserver(void)
         strlen(safe_passwd) +
         strlen(safe_ent_username) +
         strlen(safe_ent_identity) +
+        strlen(safe_sta_mac_str) +
         256;
     char* config_page = malloc(sizeof(char) * page_len);
 
     snprintf(
         config_page, page_len, config_page_template,
         safe_ap_ssid, safe_ap_passwd,
-        safe_ssid, safe_passwd, safe_ent_username, safe_ent_identity,
+        safe_ssid, safe_passwd, safe_ent_username, safe_ent_identity, safe_sta_mac_str,
             static_ip, subnet_mask, gateway_addr);
     indexp.user_ctx = config_page;
 
@@ -239,6 +274,7 @@ httpd_handle_t start_webserver(void)
     free(safe_passwd);
     free(safe_ent_username);
     free(safe_ent_identity);
+    free(safe_sta_mac_str);
 
     esp_timer_create(&restart_timer_args, &restart_timer);
 
