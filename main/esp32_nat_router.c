@@ -245,7 +245,7 @@ static void initialize_console(void)
     /* Drain stdout before reconfiguring it */
     fflush(stdout);
     fsync(fileno(stdout));
-    
+
     /* Minicom, screen, idf_monitor send CR when ENTER key is pressed */
     uart_vfs_dev_port_set_rx_line_endings(0, ESP_LINE_ENDINGS_CR);
     /* Move the caret to the beginning of the next line on '\n' */
@@ -400,7 +400,7 @@ void wifi_init(const uint8_t* mac, const char* ssid, const char* ent_username, c
     // esp_netif_dns_info_t dnsinfo;
 
     wifi_event_group = xEventGroupCreate();
-  
+
     esp_netif_init();
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     wifiAP = esp_netif_create_default_wifi_ap();
@@ -459,7 +459,7 @@ void wifi_init(const uint8_t* mac, const char* ssid, const char* ent_username, c
     if (strlen(ap_passwd) < 8) {
         ap_config.ap.authmode = WIFI_AUTH_OPEN;
     } else {
-	    strlcpy((char*)ap_config.sta.password, ap_passwd, sizeof(ap_config.sta.password));
+        strlcpy((char*)ap_config.sta.password, ap_passwd, sizeof(ap_config.sta.password));
     }
 
     if (strlen(ssid) > 0) {
@@ -519,7 +519,7 @@ void wifi_init(const uint8_t* mac, const char* ssid, const char* ent_username, c
         ESP_LOGI(TAG, "wifi_init_apsta finished.");
         ESP_LOGI(TAG, "connect to ap SSID: %s ", ssid);
     } else {
-        ESP_LOGI(TAG, "wifi_init_ap with default finished.");      
+        ESP_LOGI(TAG, "wifi_init_ap with default finished.");
     }
 }
 
@@ -586,7 +586,7 @@ void app_main(void)
     get_config_param_str("ap_ssid", &ap_ssid);
     if (ap_ssid == NULL) {
         ap_ssid = param_set_default("ESP32_NAT_Router");
-    }   
+    }
     get_config_param_str("ap_passwd", &ap_passwd);
     if (ap_passwd == NULL) {
         ap_passwd = param_set_default("");
@@ -640,7 +640,7 @@ void app_main(void)
     if (strlen(ssid) == 0) {
          printf("\n"
                "Unconfigured WiFi\n"
-               "Configure using 'set_sta' and 'set_ap' and restart.\n");       
+               "Configure using 'set_sta' and 'set_ap' and restart.\n");
     }
 
     /* Figure out if the terminal supports escape sequences */
