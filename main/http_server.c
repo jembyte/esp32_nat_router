@@ -177,6 +177,16 @@ static esp_err_t index_get_handler(httpd_req_t *req)
                     }
                 }
             }
+            if (httpd_query_key_value(buf, "hostname", param1, sizeof(param1)) == ESP_OK) {
+                ESP_LOGI(TAG, "Found URL query parameter => hostname=%s", param1);
+                preprocess_string(param1);
+                int argc = 2;
+                char* argv[2];
+                argv[0] = "set_hostname";
+                argv[1] = param1;
+                set_hostname(argc, argv);
+                esp_timer_start_once(restart_timer, 500000);
+            }
         }
         free(buf);
     }
@@ -248,6 +258,7 @@ httpd_handle_t start_webserver(void)
     char* safe_ent_username = html_escape(ent_username);
     char* safe_ent_identity = html_escape(ent_identity);
     char* safe_sta_mac_str = html_escape(sta_mac_str);
+    char* safe_loc_hostname = html_escape(loc_hostname);
 
     int page_len =
         strlen(config_page_template) +
@@ -258,6 +269,7 @@ httpd_handle_t start_webserver(void)
         strlen(safe_ent_username) +
         strlen(safe_ent_identity) +
         strlen(safe_sta_mac_str) +
+        strlen(safe_loc_hostname) +
         256;
     char* config_page = malloc(sizeof(char) * page_len);
 
@@ -265,7 +277,8 @@ httpd_handle_t start_webserver(void)
         config_page, page_len, config_page_template,
         safe_ap_ssid, safe_ap_passwd,
         safe_ssid, safe_passwd, safe_ent_username, safe_ent_identity, safe_sta_mac_str,
-            static_ip, subnet_mask, gateway_addr);
+        static_ip, subnet_mask, gateway_addr,
+        safe_loc_hostname);
     indexp.user_ctx = config_page;
 
     free(safe_ap_ssid);
@@ -275,6 +288,7 @@ httpd_handle_t start_webserver(void)
     free(safe_ent_username);
     free(safe_ent_identity);
     free(safe_sta_mac_str);
+    free(safe_loc_hostname);
 
     esp_timer_create(&restart_timer_args, &restart_timer);
 

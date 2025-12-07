@@ -394,7 +394,7 @@ const int CONNECTED_BIT = BIT0;
 #define JOIN_TIMEOUT_MS (2000)
 
 
-void wifi_init(const uint8_t* mac, const char* ssid, const char* ent_username, const char* ent_identity, const char* passwd, const char* static_ip, const char* subnet_mask, const char* gateway_addr, const uint8_t* ap_mac, const char* ap_ssid, const char* ap_passwd, const char* ap_ip)
+void wifi_init(const uint8_t* mac, const char* ssid, const char* ent_username, const char* ent_identity, const char* passwd, const char* static_ip, const char* subnet_mask, const char* gateway_addr, const uint8_t* ap_mac, const char* ap_ssid, const char* ap_passwd, const char* ap_ip, const char* loc_hostname)
 {
     esp_netif_dns_info_t dnsserver;
     // esp_netif_dns_info_t dnsinfo;
@@ -511,6 +511,12 @@ void wifi_init(const uint8_t* mac, const char* ssid, const char* ent_username, c
     // esp_netif_get_dns_info(WIFI_IF_AP, ESP_NETIF_DNS_MAIN, &dnsinfo);
     // ESP_LOGI(TAG, "DNS IP:" IPSTR, IP2STR(&dnsinfo.ip.u_addr.ip4));
 
+    // Set custom lwIP local hostname
+    if (strlen(loc_hostname) != 0) {
+        esp_netif_set_hostname(wifiAP, loc_hostname);
+        esp_netif_set_hostname(wifiSTA, loc_hostname);
+    }
+
     xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT,
         pdFALSE, pdTRUE, JOIN_TIMEOUT_MS / portTICK_PERIOD_MS);
     ESP_ERROR_CHECK(esp_wifi_start());
@@ -536,6 +542,7 @@ uint8_t* ap_mac = NULL;
 char* ap_ssid = NULL;
 char* ap_passwd = NULL;
 char* ap_ip = NULL;
+char* loc_hostname = NULL;
 
 char* param_set_default(const char* def_val) {
     char * retval = malloc(strlen(def_val)+1);
@@ -624,11 +631,15 @@ void app_main(void)
     if (ap_ip == NULL) {
         ap_ip = param_set_default(DEFAULT_AP_IP);
     }
+    get_config_param_str("loc_hostname", &loc_hostname);
+    if (loc_hostname == NULL) {
+        loc_hostname = param_set_default("");
+    }
 
     get_portmap_tab();
 
     // Setup WIFI
-    wifi_init(mac, ssid, ent_username, ent_identity, passwd, static_ip, subnet_mask, gateway_addr, ap_mac, ap_ssid, ap_passwd, ap_ip);
+    wifi_init(mac, ssid, ent_username, ent_identity, passwd, static_ip, subnet_mask, gateway_addr, ap_mac, ap_ssid, ap_passwd, ap_ip, loc_hostname);
 
     pthread_t t1;
     pthread_create(&t1, NULL, led_status_thread, NULL);

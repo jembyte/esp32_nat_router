@@ -157,6 +157,21 @@ setTimeout(\"location.href = '/'\",10000);\
 </small>\
 </form>\
 \
+<h2>Miscellaneous</h2>\
+<form action='' method='GET'>\
+<table>\
+<tr>\
+<td>Hostname</td>\
+<td><input type='text' name='hostname' value='%s' placeholder='Hostname of the device'/></td>\
+</tr>\
+<tr>\
+<td></td>\
+<td><input type='submit' value='Set' class='ok-button'/></td>\
+</tr>\
+\
+</table>\
+</form>\
+\
 <h2>Device Management</h2>\
 <form action='' method='GET'>\
 <table>\

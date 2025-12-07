@@ -25,6 +25,7 @@ extern char* gateway_addr;
 extern char* ap_ssid;
 extern char* ap_passwd;
 extern char* sta_mac_str;
+extern char* loc_hostname;
 
 extern uint16_t connect_count;
 extern bool ap_connect;
@@ -37,6 +38,7 @@ int set_sta(int argc, char **argv);
 int set_sta_static(int argc, char **argv);
 int set_ap(int argc, char **argv);
 int set_sta_mac(int argc, char **argv);
+int set_hostname(int argc, char **argv);
 
 char* mac_bytes_to_string(uint8_t* mac_bytes);
 int parse_mac_string(const char* mac_str, uint8_t* mac_bytes);

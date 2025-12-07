@@ -42,6 +42,7 @@ static void register_set_sta_static(void);
 static void register_set_mac(void);
 static void register_set_ap(void);
 static void register_set_ap_ip(void);
+static void register_set_hostname(void);
 static void register_show(void);
 static void register_portmap(void);
 
@@ -147,6 +148,7 @@ void register_router(void)
     register_set_mac();
     register_set_ap();
     register_set_ap_ip();
+    register_set_hostname();
     register_portmap();
     register_show();
 }
@@ -485,6 +487,55 @@ static void register_set_ap_ip(void)
         .hint = NULL,
         .func = &set_ap_ip,
         .argtable = &set_ap_ip_arg
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
+}
+
+/** Arguments used by 'set_hostname' function */
+static struct {
+    struct arg_str *hostname_str;
+    struct arg_end *end;
+} set_hostname_arg;
+
+
+/* 'set_hostname' command */
+int set_hostname(int argc, char **argv)
+{
+    esp_err_t err;
+    nvs_handle_t nvs;
+
+    int nerrors = arg_parse(argc, argv, (void **) &set_hostname_arg);
+    if (nerrors != 0) {
+        arg_print_errors(stderr, set_hostname_arg.end, argv[0]);
+        return 1;
+    }
+
+    preprocess_string((char*)set_hostname_arg.hostname_str->sval[0]);
+
+    err = nvs_open(PARAM_NAMESPACE, NVS_READWRITE, &nvs);
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    err = nvs_set_str(nvs, "loc_hostname", set_hostname_arg.hostname_str->sval[0]);
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG, "lwIP local hostname %s stored.", set_hostname_arg.hostname_str->sval[0]);
+    }
+    nvs_close(nvs);
+    return err;
+}
+
+static void register_set_hostname(void)
+{
+    set_hostname_arg.hostname_str = arg_str1(NULL, NULL, "<hostname>", "Local hostname");
+    set_hostname_arg.end = arg_end(1);
+
+    const esp_console_cmd_t cmd = {
+        .command = "set_hostname",
+        .help = "Set lwIP local hostname",
+        .hint = NULL,
+        .func = &set_hostname,
+        .argtable = &set_hostname_arg
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&cmd) );
 }
