@@ -51,6 +51,9 @@
 #define BLINK_GPIO 8
 #endif
 
+// Short GPIO to ground to disable webserver
+#define BUTTON_PIN 3
+
 /* FreeRTOS event group to signal when we are connected*/
 static EventGroupHandle_t wifi_event_group;
 
@@ -647,9 +650,22 @@ void app_main(void)
     ip_napt_enable(my_ap_ip, 1);
     ESP_LOGI(TAG, "NAT is enabled");
 
+    /* Configure GPIO */
+    gpio_config_t io_conf = {
+        .pin_bit_mask = (1ULL << BUTTON_PIN),  //bit mask of the pins
+        .mode = GPIO_MODE_INPUT,               //set as input mode
+        .pull_up_en = GPIO_PULLUP_ENABLE,      //enable pull-up mode
+        .pull_down_en = GPIO_PULLDOWN_DISABLE, //disable pull-down mode
+        .intr_type = GPIO_INTR_DISABLE         //disable interrupt
+    };
+    gpio_config(&io_conf);
+
+    int level = gpio_get_level(BUTTON_PIN);
     char* lock = NULL;
     get_config_param_str("lock", &lock);
-    if (lock == NULL) {
+    if (level == 0) {
+        lock = param_set_default("1");
+    } else if (lock == NULL) {
         lock = param_set_default("0");
     }
     if (strcmp(lock, "0") ==0) {
