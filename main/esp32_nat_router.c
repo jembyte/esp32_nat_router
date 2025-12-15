@@ -51,7 +51,7 @@
 #define BLINK_GPIO 8
 #endif
 
-// Short GPIO to ground to disable webserver
+// Short GPIO to ground to disable webserver and hide AP ssid
 #define BUTTON_PIN 3
 
 /* FreeRTOS event group to signal when we are connected*/
@@ -397,7 +397,7 @@ const int CONNECTED_BIT = BIT0;
 #define JOIN_TIMEOUT_MS (2000)
 
 
-void wifi_init(const uint8_t* mac, const char* ssid, const char* ent_username, const char* ent_identity, const char* passwd, const char* static_ip, const char* subnet_mask, const char* gateway_addr, const uint8_t* ap_mac, const char* ap_ssid, const char* ap_passwd, const char* ap_ip, const char* loc_hostname)
+void wifi_init(const uint8_t* mac, const char* ssid, const char* ent_username, const char* ent_identity, const char* passwd, const char* static_ip, const char* subnet_mask, const char* gateway_addr, const uint8_t* ap_mac, const char* ap_ssid, const char* ap_passwd, const char* ap_ip, const char* loc_hostname, const int btn_level)
 {
     esp_netif_dns_info_t dnsserver;
     // esp_netif_dns_info_t dnsinfo;
@@ -463,6 +463,10 @@ void wifi_init(const uint8_t* mac, const char* ssid, const char* ent_username, c
         ap_config.ap.authmode = WIFI_AUTH_OPEN;
     } else {
         strlcpy((char*)ap_config.sta.password, ap_passwd, sizeof(ap_config.sta.password));
+    }
+
+    if (btn_level == 0) {
+        ap_config.ap.ssid_hidden = 1;
     }
 
     if (strlen(ssid) > 0) {
@@ -641,15 +645,6 @@ void app_main(void)
 
     get_portmap_tab();
 
-    // Setup WIFI
-    wifi_init(mac, ssid, ent_username, ent_identity, passwd, static_ip, subnet_mask, gateway_addr, ap_mac, ap_ssid, ap_passwd, ap_ip, loc_hostname);
-
-    pthread_t t1;
-    pthread_create(&t1, NULL, led_status_thread, NULL);
-
-    ip_napt_enable(my_ap_ip, 1);
-    ESP_LOGI(TAG, "NAT is enabled");
-
     /* Configure GPIO */
     gpio_config_t io_conf = {
         .pin_bit_mask = (1ULL << BUTTON_PIN),  //bit mask of the pins
@@ -660,10 +655,20 @@ void app_main(void)
     };
     gpio_config(&io_conf);
 
-    int level = gpio_get_level(BUTTON_PIN);
+    int btn_level = gpio_get_level(BUTTON_PIN);
+
+    // Setup WIFI
+    wifi_init(mac, ssid, ent_username, ent_identity, passwd, static_ip, subnet_mask, gateway_addr, ap_mac, ap_ssid, ap_passwd, ap_ip, loc_hostname, btn_level);
+
+    pthread_t t1;
+    pthread_create(&t1, NULL, led_status_thread, NULL);
+
+    ip_napt_enable(my_ap_ip, 1);
+    ESP_LOGI(TAG, "NAT is enabled");
+
     char* lock = NULL;
     get_config_param_str("lock", &lock);
-    if (level == 0) {
+    if (btn_level == 0) {
         lock = param_set_default("1");
     } else if (lock == NULL) {
         lock = param_set_default("0");
